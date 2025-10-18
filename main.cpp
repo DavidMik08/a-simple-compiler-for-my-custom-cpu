@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <bits/stdc++.h>
-
+#include <algorithm>
+#include <cctype>
 using namespace std;
 
 class Var {    // a class used to store data about a variable
@@ -69,8 +69,15 @@ void handleExpression(string expression, ofstream& fo) {
       fo << "add stk 0 r1" << endl;
       fo << "add stk 0 r2" << endl;
       switch (op[i]) {
-      case '+': fo << "add r1 r2 stk" << endl; break;
-      case '-': fo << "sub r1 r2 stk" << endl; break;
+      case '+': fo << "add r1 r2 stk"  << endl; break;
+      case '-': fo << "sub r1 r2 stk"  << endl; break;
+      case '|': fo << "or r1 r2 stk"   << endl; break;
+      case '/': fo << "nor r1 r2 stk"  << endl; break;
+      case '&': fo << "and r1 r2 stk"  << endl; break;
+      case '$': fo << "nand r1 r2 stk" << endl; break;
+      case '^': fo << "xor r1 r2 stk"  << endl; break;
+      case '#': fo << "xnor r1 r2 stk" << endl; break;
+      case '>': fo << "shr r1 r2 stk"  << endl; break;
       }
     }
   }
