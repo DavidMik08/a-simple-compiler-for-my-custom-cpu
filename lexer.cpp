@@ -123,7 +123,7 @@ vector<string> lexExpression(string line) {
   return exprTokens;
 }
 
-vector<string> lex(string line) {
+vector<string> lex(string line, ifstream& fi) {
   vector<string> tokens;
   if (line.compare(0, 4, "var ") == 0) {
     tokens.push_back("VAR_T");
@@ -154,6 +154,44 @@ vector<string> lex(string line) {
     default: tokens.push_back("ERROR_T"); break;
     }
    
+  } else if (line.compare(0, 2, "if") == 0) {
+    tokens.push_back("IF_T");
+    line.erase(0, 2);
+    while (line[0] == ' ') line.erase(0, 1);
+    if (line[0] == '(') {
+      tokens.push_back("OPEN_P_T");
+      line.erase(0, 1);
+
+      string expr;
+      while (line[0] != ')') {
+        expr.push_back(line[0]);
+	line.erase(0, 1);
+      }
+      line.erase(0, 1);
+      vector<string> exprTokens = lexExpression(expr);
+      for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
+      while (line[0] == ' ') line.erase(0, 1);
+      tokens.push_back("CLOSE_P_T");
+      
+      if (line[0] == '{') { // noinline if
+	tokens.push_back("OPEN_B_T");
+	line.erase(0, 1);
+	vector<string> lineTokens;
+	while (getline(fi, line)) {
+	  while (line[0] == ' ') line.erase(0, 1);
+	  if (line[0] == '}') break;
+	  lineTokens = lex(line, fi);
+	  for (int i = 0; i<lineTokens.size(); i++) tokens.push_back(lineTokens[i]);
+	}
+	tokens.push_back("CLOSE_B_T");
+	line.erase(0, 1);
+	vector<string> afterIf = lex(line, fi);
+	for (int i = 0; i<afterIf.size(); i++) tokens.push_back(afterIf[i]); // lexes the rest of the line where the block ends 
+      } else { // inline if
+	vector<string> ifTokens = lex(line, fi);
+	for (int i = 0; i<ifTokens.size(); i++) tokens.push_back(ifTokens[i]);
+      }
+    } else tokens.push_back("ERROR_T");
   }
   return tokens;
 }
@@ -174,9 +212,11 @@ int main(int argc, char** argv) {
   }
 
   string line;
+  vector<string> lineTokens;
   vector<string> tokens;
   while (getline(fi, line)) {
-    tokens = lex(line);
+    lineTokens = lex(line, fi);
+    for (int i = 0; i<lineTokens.size(); i++) tokens.push_back(lineTokens[i]);
   }
   for (int i = 0; i< tokens.size(); i++) cout<<tokens[i]<<endl;
 
