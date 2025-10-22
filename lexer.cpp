@@ -70,12 +70,28 @@ vector<string> lexExpression(string line) {
     case '>':
       exprTokens.push_back(value);
       if (line[1] == '>') {
-      exprTokens.push_back("SHR_T");
-      line.erase(0, 1);
-      value.erase(0, value.size());
+	exprTokens.push_back("SHR_T");
+	line.erase(0, 2);
+	value.erase(0, value.size());
+      } else if (line[1] == '=') {
+	exprTokens.push_back("GRATER_EQ_T");
+	line.erase(0, 2);
+	value.erase(0, value.size());
       } else {
       exprTokens.push_back("GRATER_T");
-      line.erase(0, 2);
+      line.erase(0, 1);
+      value.erase(0, value.size());
+      }
+      break;
+    case '<':
+      if (line[1] == '=') {
+	exprTokens.push_back("LESS_EQ_T");
+	line.erase(0, 2);
+	value.erase(0, value.size());
+      } else {
+      exprTokens.push_back(value);
+      exprTokens.push_back("LESS_T");
+      line.erase(0, 1);
       value.erase(0, value.size());
       }
       break;
@@ -85,6 +101,18 @@ vector<string> lexExpression(string line) {
       line.erase(0, 1);
       value.erase(0, value.size());
       break;
+    case '=':
+      if (line[1] == '=') {
+	exprTokens.push_back(value);
+	exprTokens.push_back("EQ_T");
+	line.erase(0, 2);
+	value.erase(0, value.size());
+      } else {
+	exprTokens.push_back(value);
+	exprTokens.push_back("ERROR_T");
+	line.erase(0, 1);
+	value.erase(0, value.size());
+      }
     default:
       value+=line[0];
       line.erase(0, 1);
@@ -111,7 +139,7 @@ vector<string> lex(string line) {
     while (line[0] == ' ') line.erase(0, 1);
     switch (line[0]) {
     case '=': {
-      tokens.push_back("EQ_T");
+      tokens.push_back("ASSERT_T");
       line.erase(0, 1);
       vector<string> exprTokens = lexExpression(line);
       for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
