@@ -71,11 +71,11 @@ vector<string> lexExpression(string line) {
       exprTokens.push_back(value);
       if (line[1] == '>') {
       exprTokens.push_back("SHR_T");
-      line.erase(0, 1);
+      line.erase(0, 2);
       value.erase(0, value.size());
       } else {
       exprTokens.push_back("GRATER_T");
-      line.erase(0, 2);
+      line.erase(0, 1);
       value.erase(0, value.size());
       }
       break;
