@@ -6,6 +6,9 @@
 #include <cctype>
 using namespace std;
 
+vector<string> lex(string, ifstream&);
+
+
 void usage (string name) {
   cout<<"USAGE:"<<endl;
   cout<<name<<" inputFile"<<endl;
@@ -123,14 +126,32 @@ vector<string> lexExpression(string line) {
   return exprTokens;
 }
 
+vector<string> lexBlock(string& line, ifstream& fi) {
+  vector<string> tokens;
+  tokens.push_back("OPEN_B_T");
+  vector<string> lineTokens;
+  while (getline(fi, line)) {
+    while (line[0] == ' ') line.erase(0, 1);
+    if (line[0] == '}') {
+      line.erase(0, 1);
+      break;
+    }
+    lineTokens = lex(line, fi);
+    for (int i = 0; i<lineTokens.size(); i++) tokens.push_back(lineTokens[i]);
+  }
+  tokens.push_back("CLOSE_B_T");
+  return tokens;
+}
+
 vector<string> lex(string line, ifstream& fi) {
   vector<string> tokens;
+  while (line[0] == ' ') line.erase(0, 1);
   if (line.compare(0, 4, "var ") == 0) {
     tokens.push_back("VAR_T");
     line.erase(0, 4);
     
     string name;
-    while (line[4] == ' ') line.erase(4, 1);
+    while (line[0] == ' ') line.erase(0, 1);
     for (int i = 0; i<line.size(); i++) {
       if (line[i] == ' ' || line[i] == '=') break;
       name+=line[i];
@@ -174,17 +195,9 @@ vector<string> lex(string line, ifstream& fi) {
       tokens.push_back("CLOSE_P_T");
       
       if (line[0] == '{') { // noinline if
-	tokens.push_back("OPEN_B_T");
 	line.erase(0, 1);
-	vector<string> lineTokens;
-	while (getline(fi, line)) {
-	  while (line[0] == ' ') line.erase(0, 1);
-	  if (line[0] == '}') break;
-	  lineTokens = lex(line, fi);
-	  for (int i = 0; i<lineTokens.size(); i++) tokens.push_back(lineTokens[i]);
-	}
-	tokens.push_back("CLOSE_B_T");
-	line.erase(0, 1);
+	vector<string> blockTokens = lexBlock(line, fi);
+	for (int i = 0; i<blockTokens.size(); i++) tokens.push_back(blockTokens[i]);
 	vector<string> afterIf = lex(line, fi);
 	for (int i = 0; i<afterIf.size(); i++) tokens.push_back(afterIf[i]); // lexes the rest of the line where the block ends 
       } else { // inline if
@@ -192,6 +205,20 @@ vector<string> lex(string line, ifstream& fi) {
 	for (int i = 0; i<ifTokens.size(); i++) tokens.push_back(ifTokens[i]);
       }
     } else tokens.push_back("ERROR_T");
+  } else if (line.compare(0, 4, "else") == 0) {    // else
+    tokens.push_back("ELSE_T");
+    line.erase(0, 4);
+    while (line[0] == ' ') line.erase(0, 1);
+    if (line[0] == '{') {    // noinline else
+      line.erase(0, 1);
+      vector<string> blockTokens = lexBlock(line, fi);
+      for (int i = 0; i<blockTokens.size(); i++) tokens.push_back(blockTokens[i]);
+      vector<string> afterElse = lex(line, fi);
+      for (int i = 0; i<afterElse.size(); i++) tokens.push_back(afterElse[i]); // lexes the rest of the line where the block ends 
+    } else {    // inline else
+      vector<string> elseTokens = lex(line, fi);
+      for (int i = 0; i<elseTokens.size(); i++) tokens.push_back(elseTokens[i]);
+    }
   }
   return tokens;
 }
