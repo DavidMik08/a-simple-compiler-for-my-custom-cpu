@@ -219,6 +219,66 @@ vector<string> lex(string line, ifstream& fi) {
       vector<string> elseTokens = lex(line, fi);
       for (int i = 0; i<elseTokens.size(); i++) tokens.push_back(elseTokens[i]);
     }
+  } else if (line.compare(0, 5, "while") == 0) {
+    tokens.push_back("WHILE_T");
+    line.erase(0, 5);
+    while (line[0] == ' ') line.erase(0, 1);
+    if (line[0] == '(') {
+      tokens.push_back("OPEN_P_T");
+      line.erase(0, 1);
+
+      string expr;
+      while (line[0] != ')') {
+        expr.push_back(line[0]);
+	line.erase(0, 1);
+      }
+      line.erase(0, 1);
+      vector<string> exprTokens = lexExpression(expr);
+      for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
+      while (line[0] == ' ') line.erase(0, 1);
+      tokens.push_back("CLOSE_P_T");
+      
+      if (line[0] == '{') { // noinline while
+	line.erase(0, 1);
+	vector<string> blockTokens = lexBlock(line, fi);
+	for (int i = 0; i<blockTokens.size(); i++) tokens.push_back(blockTokens[i]);
+	vector<string> afterWhile = lex(line, fi);
+	for (int i = 0; i<afterWhile.size(); i++) tokens.push_back(afterWhile[i]); // lexes the rest of the line where the block ends 
+      } else { // inline while
+	vector<string> whileTokens = lex(line, fi);
+	for (int i = 0; i<whileTokens.size(); i++) tokens.push_back(whileTokens[i]);
+      }
+    } else tokens.push_back("ERROR_T");
+  } else if (line.compare(0, 3, "for") == 0) {
+    tokens.push_back("FOR_T");
+    line.erase(0, 3);
+    while (line[0] == ' ') line.erase(0, 1);
+    if (line[0] == '(') {
+      tokens.push_back("OPEN_P_T");
+      line.erase(0, 1);
+
+      string expr;
+      while (line[0] != ')') {
+        expr.push_back(line[0]);
+	line.erase(0, 1);
+      }
+      line.erase(0, 1);
+      vector<string> exprTokens = lexExpression(expr);
+      for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
+      while (line[0] == ' ') line.erase(0, 1);
+      tokens.push_back("CLOSE_P_T");
+      
+      if (line[0] == '{') { // noinline for
+	line.erase(0, 1);
+	vector<string> blockTokens = lexBlock(line, fi);
+	for (int i = 0; i<blockTokens.size(); i++) tokens.push_back(blockTokens[i]);
+	vector<string> afterFor = lex(line, fi);
+	for (int i = 0; i<afterFor.size(); i++) tokens.push_back(afterFor[i]); // lexes the rest of the line where the block ends 
+      } else { // inline for
+	vector<string> forTokens = lex(line, fi);
+	for (int i = 0; i<forTokens.size(); i++) tokens.push_back(forTokens[i]);
+      }
+    } else tokens.push_back("ERROR_T");
   }
   return tokens;
 }
