@@ -9,10 +9,10 @@ using namespace std;
 vector<string> lex(string, ifstream&);
 
 
-void usage (string name) {
+int usage (string name) {
   cout<<"USAGE:"<<endl;
   cout<<name<<" inputFile"<<endl;
-  return;
+  return 0;
 }
 
 vector<string> lexExpression(string line) {
@@ -124,6 +124,54 @@ vector<string> lexExpression(string line) {
     }
   }
   return exprTokens;
+}
+
+vector<string> lexForExpression(string line, ifstream& fi) {    // line = var name = value; condition; increment;
+  vector<string> tokens;
+  string asignment;
+  string condition;
+  string increment;
+  do {
+    asignment += line[0];
+    line.erase(0, 1);
+  } while (line[0] != ';');
+  asignment += line[0];
+  line.erase(0, 1);
+  while (line[0] == ' ') line.erase(0, 1);
+  do {
+    condition += line[0];
+    line.erase(0, 1);
+  } while (line[0] != ';');
+  condition += line[0];
+  line.erase(0, 1);
+  while (line[0] == ' ') line.erase(0, 1);
+  do {
+    increment += line[0];
+    line.erase(0, 1);
+  } while (line[0] != ';');
+  increment += line[0];
+  line.erase(0, 1);
+  while (line[0] == ' ') line.erase(0, 1);
+  
+  cout << "Asignment: " << asignment << ", Condition: " << condition << ", Increment: " << increment << endl;
+
+  vector<string> asignmentTokens = lex(asignment, fi);
+  vector<string> conditionTokens = lex(condition, fi);
+  vector<string> incrementTokens = lex(increment, fi);
+  for (int i = 0; i<asignmentTokens.size(); i++) {
+    tokens.push_back(asignmentTokens[i]);
+    cout << "Asignment Tokens: " << asignmentTokens[i] << endl;
+  }
+  cout << "Cond size: " << conditionTokens.size() << endl;
+  for (int i = 0; i<conditionTokens.size(); i++) {
+    tokens.push_back(conditionTokens[i]);
+    cout << "Condition Tokens: " << conditionTokens[i] << endl;
+  }
+  for (int i = 0; i<incrementTokens.size(); i++) {
+    tokens.push_back(incrementTokens[i]);
+    cout << "Increment Tokens: " << incrementTokens[i] << endl;
+  }
+  return tokens;
 }
 
 vector<string> lexBlock(string& line, ifstream& fi) {
@@ -263,7 +311,8 @@ vector<string> lex(string line, ifstream& fi) {
 	line.erase(0, 1);
       }
       line.erase(0, 1);
-      vector<string> exprTokens = lexExpression(expr);
+      cout << "For expression: " << expr << endl;
+      vector<string> exprTokens = lexForExpression(expr, fi);
       for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
       while (line[0] == ' ') line.erase(0, 1);
       tokens.push_back("CLOSE_P_T");
@@ -278,34 +327,29 @@ vector<string> lex(string line, ifstream& fi) {
 	vector<string> forTokens = lex(line, fi);
 	for (int i = 0; i<forTokens.size(); i++) tokens.push_back(forTokens[i]);
       }
-    } else tokens.push_back("ERROR_T");
+    } else {
+      string varName;
+      while (line[0] != ' ' && line[0] != '=') {
+	varName+=line[0];
+	line.erase(0, 1);
+      }
+      tokens.push_back(varName);
+      while (line[0] == ' ') line.erase(0, 1);
+      switch (line[0]) {
+      case '=': {
+	tokens.push_back("ASSERT_T");
+	line.erase(0, 1);
+	vector<string> exprTokens = lexExpression(line);
+	for (int i = 0; i<exprTokens.size(); i++) tokens.push_back(exprTokens[i]);
+	break;
+      }
+      case ';':
+	tokens.push_back("SEMICOLON_T");
+	line.erase(0, 1);
+	break;
+      default: tokens.push_back("ERROR_T"); break;
+      }
+    }
   }
   return tokens;
-}
-
-int main(int argc, char** argv) {
-  string name = argv[0];
-  if (argc < 2) {
-    cout<<"ERROR: No input file specified!"<<endl;
-    usage(name);
-    return 1;
-  }
-
-  ifstream fi(argv[1]);
-
-  if (!fi) {
-    cout<<"ERROR: Can't open file: "<<argv[1]<<endl;
-    return 1;
-  }
-
-  string line;
-  vector<string> lineTokens;
-  vector<string> tokens;
-  while (getline(fi, line)) {
-    lineTokens = lex(line, fi);
-    for (int i = 0; i<lineTokens.size(); i++) tokens.push_back(lineTokens[i]);
-  }
-  for (int i = 0; i< tokens.size(); i++) cout<<tokens[i]<<endl;
-
-  fi.close();
 }
